@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Quantum Maze Simulator — Grover 6q</title>
+<style>
+:root{--bg:#0d1117;--panel:#161b22;--panel2:#1f2632;--line:rgba(255,255,255,.12);--text:#edf2f7;--muted:#9aa7b7;--accent:#46d6c7;--oracle:#ff79c6;--blue:#7aa2ff;--gold:#ffcc66;--dim:#94a3b8}
+*{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at top,#132136,var(--bg) 42%);color:var(--text);font-family:Inter,Arial,sans-serif}
+.wrap{max-width:1540px;margin:0 auto;padding:22px}.hero{margin-bottom:18px}.hero h1{margin:0 0 10px;font-size:clamp(2rem,3vw,3.5rem)}.hero p{margin:0;color:var(--muted);max-width:98ch;line-height:1.55}
+.grid{display:grid;grid-template-columns:390px 1.15fr .95fr;gap:18px}.panel{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:18px;padding:18px}
+.section{margin-bottom:16px}.section h2{margin:0 0 10px;color:var(--muted);font-size:.84rem;text-transform:uppercase;letter-spacing:.08em}
+.btns{display:flex;flex-wrap:wrap;gap:10px}.btn{border:0;border-radius:12px;padding:11px 14px;cursor:pointer;font:inherit}.primary{background:linear-gradient(135deg,#46d6c7,#2b7e82);color:#071214;font-weight:700}.primary.error{background:linear-gradient(135deg,#ffcc66,#ff79c6);animation:pulse 1s infinite}.secondary{background:var(--panel2);color:var(--text)}.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,121,198,0.7)}70%{box-shadow:0 0 0 10px rgba(255,121,198,0)}100%{box-shadow:0 0 0 0 rgba(255,121,198,0)}}
+.mode-switch{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.mode-btn{border:1px solid var(--line);background:rgba(255,255,255,.02);color:var(--text);border-radius:12px;padding:10px 12px;cursor:pointer}.mode-btn.active{border-color:rgba(70,214,199,.8);background:rgba(70,214,199,.12)}
+.stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{padding:12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025)}.stat span{display:block;color:var(--muted);font-size:.84rem}.stat strong{display:block;margin-top:6px}.tiny{font-size:.8rem;color:var(--muted)}
+.note{padding:12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025);color:var(--muted);line-height:1.5}
+.maze-wrap{position:relative;background:#0b0f14;border:1px solid var(--line);border-radius:16px;padding:12px;display:grid;place-items:center}.maze-stage{position:relative;display:inline-block}.maze-stage .maze-bg{width:min(100%,620px);display:block;border-radius:10px;background:#151b23}.maze-overlay{position:absolute;inset:0;width:100%;height:100%}
+.exit-picker{display:grid;gap:10px}.exit-option{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025);cursor:pointer}.exit-option.active{border-color:rgba(255,121,198,.65);background:rgba(255,121,198,.08)}
+.dot{width:14px;height:14px;border-radius:50%;margin-top:3px}.dot.top{background:#4ade80}.dot.bottom{background:#7aa2ff}
+.paths{display:grid;gap:8px;max-height:360px;overflow:auto}.row{display:grid;grid-template-columns:76px 1fr 72px 84px;gap:10px;align-items:center;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.02);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9rem;border:1px solid transparent}.row.target{border-color:rgba(255,121,198,.45);background:rgba(255,121,198,.06)}.row.measured{border-color:rgba(122,162,255,.55);background:rgba(122,162,255,.08)}
+.bar{height:12px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}.fill{height:100%;background:linear-gradient(90deg,#46d6c7,#7aa2ff)}
+.log{min-height:140px;max-height:200px;overflow:auto;background:#0a0d13;border:1px solid var(--line);border-radius:14px;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86rem}
+.circuit-head{display:grid;grid-template-columns:74px 1fr;gap:10px 18px;margin-bottom:8px}.timeline{position:relative;display:flex;gap:8px}.tl{flex:1;font-size:.72rem;color:var(--muted);text-align:center;min-width:32px;margin-top:20px;}
+.round-brace{position:absolute;top:0;height:12px;border-top:1px solid var(--dim);border-left:1px solid var(--dim);border-right:1px solid var(--dim);border-top-left-radius:4px;border-top-right-radius:4px;display:flex;justify-content:center;color:var(--muted);font-size:.65rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:1px;white-space:nowrap;align-items:flex-start} .round-brace span{transform:translateY(-8px);background:var(--panel);padding:0 4px;}
+.circuit{position:relative;display:grid;grid-template-columns:74px 1fr;gap:10px 18px;align-items:center}.wire-label{color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.wire{position:relative;display:flex;gap:8px;align-items:center;height:42px}.wire::before{content:'';position:absolute;left:0;right:0;top:50%;height:2px;background:rgba(255,255,255,.18);transform:translateY(-50%)}
+.gate{position:relative;z-index:2;height:32px;border-radius:8px;display:flex;justify-content:center;align-items:center;border:1px solid var(--line);background:var(--panel2);font-weight:700;flex:1;min-width:32px;font-size:.72rem;}
+.gate.visible{background:var(--panel2);border-color:var(--line);} .gate.multi{background:transparent;border-color:transparent;} .gate.h{color:#46d6c7}.gate.m{color:#7aa2ff}
+.multi-gate{position:absolute;z-index:1;top:0;bottom:0;border:1px solid var(--line);border-radius:8px;display:flex;writing-mode:vertical-rl;text-orientation:mixed;justify-content:center;align-items:center;font-weight:700;font-size:.75rem;letter-spacing:1px;background:rgba(31,38,50,.9);backdrop-filter:blur(4px);pointer-events:none;transition:transform 0.1s;}
+.multi-gate.o{color:#ff79c6;border-color:rgba(255,121,198,.4);background:rgba(255,121,198,.12)}.multi-gate.d{color:#ffcc66;border-color:rgba(255,204,102,.4);background:rgba(255,204,102,.12)}
+.multi-gate.active, .gate.active{outline:2px solid rgba(255,255,255,.88);transform:scale(1.02);z-index:3;}
+.legend{display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:.9rem}.legend span{display:inline-flex;align-items:center;gap:7px}.legend i{width:12px;height:12px;border-radius:50%;display:inline-block}
+@media (max-width:1240px){.grid,.stats3,.mode-switch{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="hero">
+<h1>Quantum Maze Simulator — Realism-oriented Grover view</h1>
+<p>This version separates ideal theory, noisy simulation, and hardware-like presentation. It uses a 25x25 maze rendering, a 6-qubit Grover-inspired model, a fuller circuit timeline, and histogram statistics with uncertainty.</p>
+</header>
+<main class="grid">
+<section class="panel">
+<div class="section"><h2>Controls</h2><div class="btns"><button class="btn primary" id="playBtn">Start</button><button class="btn secondary" id="stepBtn">Step</button><button class="btn ghost" id="resetBtn">Reset</button></div></div>
+<div class="section"><h2>View Mode</h2><div class="mode-switch" id="modeSwitch"></div></div>
+<div class="section"><h2>Exit Selection</h2><div class="exit-picker" id="exitPicker"></div></div>
+<div class="section"><h2>Parameters</h2><div class="stats3">
+<div class="stat"><span>Qubits</span><strong>6</strong></div>
+<div class="stat"><span>States</span><strong>64</strong></div>
+<div class="stat"><span>Optimal Grover rounds</span><strong id="roundsLabel">6</strong></div>
+<div class="stat"><span>Current shot</span><strong id="shotLabel">1 / 128</strong></div>
+<div class="stat"><span>Stage</span><strong id="stageLabel">Initialization</strong></div>
+<div class="stat"><span>Sampled state</span><strong id="measureLabel">—</strong></div>
+<div class="stat"><span>Total shots</span><strong id="shotsTotalLabel">128</strong></div>
+<div class="stat"><span>Target hits</span><strong id="targetHitsLabel">0</strong></div>
+<div class="stat"><span>Estimated success</span><strong id="successLabel">0.0%</strong><div class="tiny" id="uncertaintyLabel">±0.0% (95% CI)</div></div>
+</div></div>
+<div class="section"><h2>Stage Description</h2><div id="desc" class="note"></div></div>
+<div class="section"><h2>Model Notes</h2><div class="note" id="modelNote"></div></div>
+<div class="section"><h2>Log</h2><div class="log" id="log"></div></div>
+</section>
+<section class="panel">
+<div class="section"><h2>Maze Plan</h2><div class="maze-wrap"><div class="maze-stage"><svg class="maze-bg" viewBox="0 0 25 25" id="mazeBg"></svg><svg class="maze-overlay" id="mazeOverlay"></svg></div></div></div>
+<div class="section"><div class="legend"><span><i style="background:rgba(148,163,184,.9)"></i>candidates</span><span><i style="background:#ff79c6"></i>oracle / marked state</span><span><i style="background:#ffcc66"></i>amplified path</span><span><i style="background:#7aa2ff"></i>correct measurement</span><span><i style="background:#8b0000"></i>wrong measurement</span></div></div>
+<div class="section"><h2>6-qubit Circuit</h2><div class="circuit-head"><div></div><div class="timeline" id="timeline"></div></div><div class="circuit" id="circuit"></div></div>
+</section>
+<section class="panel">
+<div class="section"><h2 id="statesTitle">Ideal State Probabilities</h2><div class="note" id="statesNote"></div><div class="paths" id="states"></div></div>
+<div class="section"><h2>Histogram</h2><div class="note" id="histNote"></div><div class="paths" id="hist"></div></div>
+</section>
+</main>
+</div>
+<script>
+const mazeRows = [
+'xxxxxxxxxoxxxxxxxxxxxxxxx',
+'xoooooooxoxoooooxooooooox',
+'xoxxxxxxxoxxxxxoxoxxxxxox',
+'xoxoooooxoooooxoxoxooooox',
+'xoxxxxxoxoxxxoxoxxxoxxxxx',
+'xoxoooooxoxoooxooooooooox',
+'xoxoxxxoxoxxxxxxxoxxxxxox',
+'xoooxoooxoxoooooxoxooooox',
+'xxxoxxxxxoxoxxxoxxxoxxxxx',
+'xoooooooxoxoxoxooooooooox',
+'xoxxxxxoxoxoxoxxxxxxxoxox',
+'xoxoooxoooxoooxoooxoooxox',
+'xoxoxoxxxoxxxoxoxoxxxxxox',
+'xoxoxoxoooooxoxoxoxoooxox',
+'xoxxxoxxxxxoxoxoxoxoxoxox',
+'xoooooxoooooxoxoxoxoxoxox',
+'xxxxxxxoxxxxxoxoxoxoxoxox',
+'xoooooxoxoooooxoxoxoxooox',
+'xxxxxoxoxoxxxxxoxoxoxxxox',
+'xoooooooxoxoooxoxoxoxoxox',
+'xoxxxxxxxoxxxoxoxoxoxoxox',
+'xoooooooooxoooxoxoxoooxox',
+'xxxxxoxxxoxoxxxoxoxxxxxox',
+'xoooooooxoxoooooxooooooox',
+'xxxxxxxxxoxoxxxxxxxxxxxxx'
+];
+const basisStates = Array.from({length:64}, (_,i)=>i.toString(2).padStart(6,'0'));
+const exits = [
+  {id:'top', label:'Exit 1 (X, top)', goal:'011110', note:'Marked state mapped to top exit at (9, 0).'},
+  {id:'bottom', label:'Exit 2 (X, right)', goal:'101000', note:'Marked state mapped to right-side exit at (11, 24).'}
+];
+const viewModes = [
+  {id:'ideal', label:'Ideal theory'},
+  {id:'noisy', label:'Noisy simulation'},
+  {id:'hardware', label:'Hardware-like'}
+];
+const idealRounds = Math.floor(Math.PI/4*Math.sqrt(64));
+const steps = [{key:'init',label:'Initialization',text:'State preparation before superposition. This is simulator state, not a direct hardware readout.'},{key:'h',label:'Hadamard layer',text:'The Hadamard layer prepares a uniform superposition over all 64 basis states.'}];
+for(let i=1;i<=idealRounds;i++){ steps.push({key:`oracle${i}`,label:`Oracle ${i}`,text:`Oracle ${i} phase-marks the selected target basis state.`}); steps.push({key:`diff${i}`,label:`Diffuser ${i}`,text:`Diffuser ${i} redistributes amplitudes globally across all basis states.`}); }
+steps.push({key:'measure',label:'Measurement',text:'Measurement samples one basis state. Correct sampled routes are shown in blue, incorrect sampled routes in dark red.'});
+function generatePathForState(state) {
+    const d = [{x:0,y:-1},{x:1,y:0},{x:0,y:1},{x:-1,y:0}];
+    let path = [[9.5, 24.5], [9.5, 23.5]];
+    let x = 9, y = 23, currDir = 0, bits = state.split(''), bitIdx = 0;
+    while(true){
+        let moves = [];
+        let moveOptions = [{dir: (currDir+3)%4},{dir: currDir},{dir: (currDir+1)%4}];
+        for(let m of moveOptions){
+            let nx = x + d[m.dir].x, ny = y + d[m.dir].y;
+            if(ny>=0 && ny<25 && nx>=0 && nx<25 && mazeRows[ny][nx]==='o') moves.push({dir: m.dir, nx, ny});
+        }
+        if(moves.length === 0) break;
+        if(moves.length === 1){
+            currDir = moves[0].dir; x = moves[0].nx; y = moves[0].ny; path.push([x+0.5, y+0.5]);
+        } else {
+            if(bitIdx < bits.length){
+                let chosen = moves[parseInt(bits[bitIdx++])];
+                if(!chosen) break;
+                currDir = chosen.dir; x = chosen.nx; y = chosen.ny; path.push([x+0.5, y+0.5]);
+            } else break;
+        }
+    }
+    return path;
+}
+const pathMap = {};
+basisStates.forEach(s => pathMap[s] = generatePathForState(s));
+const fallbackCandidates = ['000000','001000','010000','011000','011100','011101'];
+let selectedExit = exits[0], viewMode='ideal', currentStep=0, currentShot=1, totalShots=128, playing=false, timer=null, counts={}, lastMeasured=null, persistentWrongMeasured=null, pausedForError=false;
+const els = { exitPicker:document.getElementById('exitPicker'), shotLabel:document.getElementById('shotLabel'), stageLabel:document.getElementById('stageLabel'), measureLabel:document.getElementById('measureLabel'), desc:document.getElementById('desc'), log:document.getElementById('log'), states:document.getElementById('states'), hist:document.getElementById('hist'), overlay:document.getElementById('mazeOverlay'), modeSwitch:document.getElementById('modeSwitch'), roundsLabel:document.getElementById('roundsLabel'), shotsTotalLabel:document.getElementById('shotsTotalLabel'), targetHitsLabel:document.getElementById('targetHitsLabel'), successLabel:document.getElementById('successLabel'), uncertaintyLabel:document.getElementById('uncertaintyLabel'), modelNote:document.getElementById('modelNote'), statesTitle:document.getElementById('statesTitle'), statesNote:document.getElementById('statesNote'), histNote:document.getElementById('histNote'), mazeBg:document.getElementById('mazeBg') };
+function renderMazeBg(){ els.mazeBg.innerHTML=''; mazeRows.forEach((row,y)=>{ [...row].forEach((cell,x)=>{ if(cell==='x'){ const r=document.createElementNS('http://www.w3.org/2000/svg','rect'); r.setAttribute('x',x); r.setAttribute('y',y); r.setAttribute('width',1); r.setAttribute('height',1); r.setAttribute('fill','#444C56'); els.mazeBg.appendChild(r); } }); }); }
+function log(msg){ const d=document.createElement('div'); d.textContent=`[${new Date().toLocaleTimeString('en-US',{hour12:false})}] ${msg}`; els.log.prepend(d); while(els.log.children.length>14) els.log.removeChild(els.log.lastChild); }
+function modeShots(){ return viewMode==='hardware'?1024:viewMode==='noisy'?256:128; }
+function sigma(p,n){ if(!n) return 0; return Math.sqrt(p*(1-p)/n); }
+function groverProb(round){ const N=64; const theta=Math.asin(1/Math.sqrt(N)); return Math.pow(Math.sin((2*round+1)*theta),2); }
+function buildDistribution(){ const goal=selectedExit.goal; const stepKey=steps[currentStep].key; const out={}; basisStates.forEach(s=>out[s]=0); if(stepKey==='init'){ out['000000']=1; return out; } if(stepKey==='h'){ basisStates.forEach(s=>out[s]=1/64); return out; }
+  let rounds=0; if(stepKey==='measure') rounds=idealRounds; else if(stepKey.startsWith('oracle')) rounds=Math.max(0, Number(stepKey.replace('oracle',''))-1); else if(stepKey.startsWith('diff')) rounds=Number(stepKey.replace('diff',''));
+  let pGoal=groverProb(rounds);
+  if(viewMode==='noisy') pGoal=Math.max(0.04,pGoal*0.88);
+  if(viewMode==='hardware') pGoal=Math.max(0.03,pGoal*0.74);
+  const rest=(1-pGoal)/63; basisStates.forEach(s=>out[s]=s===goal?pGoal:rest);
+  if(viewMode!=='ideal'){
+    const spread=viewMode==='hardware'?0.0018:0.0008;
+    fallbackCandidates.forEach((s,i)=>{ if(s!==goal){ out[s]+=spread*(i+1); out[goal]-=spread*(i+1); } });
+  }
+  return out;
+}
+function sampleMeasurement(dist){ let entries=Object.entries(dist); if(viewMode==='hardware') entries=entries.map(([s,p])=>[s,p*(s===selectedExit.goal?0.97:1)]); let sum=entries.reduce((a,[,p])=>a+p,0); entries=entries.map(([s,p])=>[s,p/sum]); let r=Math.random(),acc=0,hit='000000'; for(const [s,p] of entries){ acc+=p; if(r<=acc){ hit=s; break; } } if(viewMode==='hardware' && Math.random()<0.03){ const others=basisStates.filter(s=>s!==hit); hit=others[(Math.random()*others.length)|0]; } return hit; }
+function renderExitPicker(){ els.exitPicker.innerHTML=''; exits.forEach(ex=>{ const div=document.createElement('div'); div.className='exit-option'+(selectedExit.id===ex.id?' active':''); div.innerHTML=`<div class="dot ${ex.id}"></div><div style="pointer-events:none"><div><strong>${ex.label}</strong></div><div style="color:var(--muted);font-size:.92rem">Marked state: ${ex.goal}. ${ex.note}</div></div>`; div.onclick=()=>{ if(playing) return; selectedExit=ex; resetRun(false); log(`Selected ${ex.label} as marked state.`); }; els.exitPicker.appendChild(div); }); }
+function renderModeSwitch(){ els.modeSwitch.innerHTML=''; viewModes.forEach(m=>{ const b=document.createElement('button'); b.className='mode-btn'+(viewMode===m.id?' active':''); b.textContent=m.label; b.onclick=()=>{ if(playing) return; viewMode=m.id; resetRun(false); log(`Switched to ${m.label} mode.`); }; els.modeSwitch.appendChild(b); }); }
+function renderTimeline(){ 
+  const t=document.getElementById('timeline'); t.innerHTML=''; 
+  steps.slice(1).forEach((s,idx)=>{ 
+    const d=document.createElement('div'); d.className='tl'; d.id=`tl-${idx}`; 
+    d.textContent=s.key==='h'?'H':s.key.startsWith('oracle')?'Or':s.key.startsWith('diff')?'Df':'Meas'; t.appendChild(d); 
+  }); 
+  setTimeout(()=>{
+      for(let i=1;i<=idealRounds;i++){
+         const oIdx = steps.slice(1).findIndex(x=>x.key===`oracle${i}`);
+         const dIdx = steps.slice(1).findIndex(x=>x.key===`diff${i}`);
+         if(oIdx<0 || dIdx<0) continue;
+         const oEl = document.getElementById(`tl-${oIdx}`); const dEl = document.getElementById(`tl-${dIdx}`);
+         if(!oEl || !dEl) continue;
+         const rectL = oEl.getBoundingClientRect(); const rectR = dEl.getBoundingClientRect(); const pRect = t.getBoundingClientRect();
+         const b = document.createElement('div'); b.className='round-brace'; 
+         b.style.left = (rectL.left - pRect.left + 5) + 'px'; 
+         b.style.width = (rectR.right - rectL.left - 10) + 'px';
+         b.innerHTML = `<span>ROUND ${i}</span>`;
+         t.appendChild(b);
+      }
+  }, 50);
+}
+function renderCircuit(){ const box=document.getElementById('circuit'); box.innerHTML=''; 
+  let orCount=0, dfCount=0;
+  const labels=steps.slice(1).map(s=> { if(s.key==='h') return 'H'; if(s.key==='measure') return 'M'; if(s.key.startsWith('oracle')){ orCount++; return `Uf${orCount}`; } if(s.key.startsWith('diff')){ dfCount++; return `Us${dfCount}`; } return ''; });
+  ['q0','q1','q2','q3','q4','q5'].forEach((label,rowIdx)=>{ const l=document.createElement('div'); l.className='wire-label'; l.textContent=label; const w=document.createElement('div'); w.className='wire'; w.id=`wire-${rowIdx}`; 
+  labels.forEach((g,idx)=>{ const el=document.createElement('div'); el.className='gate '+(g==='H'||g==='M'?'visible ':'multi ')+(g==='H'?'h':g==='M'?'m':''); el.textContent=g==='H'||g==='M'?g:''; el.dataset.col=idx+1; el.dataset.row=rowIdx; w.appendChild(el); }); box.appendChild(l); box.appendChild(w); }); 
+  setTimeout(()=>{ 
+      const wire0 = document.getElementById('wire-0'); const wire5 = document.getElementById('wire-5'); 
+      if(!wire0 || !wire5) return; const rect0 = wire0.getBoundingClientRect(); const rect5 = wire5.getBoundingClientRect(); const boxRect = box.getBoundingClientRect(); 
+      const topOff = rect0.top - boxRect.top + 5; const height = (rect5.bottom - rect0.top) - 10;
+      labels.forEach((g,idx)=>{ if(g.startsWith('Uf')||g.startsWith('Us')){ 
+          const refG = document.querySelector(`.gate[data-col="${idx+1}"][data-row="0"]`); if(!refG) return; 
+          const leftOff = refG.getBoundingClientRect().left - boxRect.left; const w = refG.getBoundingClientRect().width; 
+          const multi = document.createElement('div'); multi.className='multi-gate '+(g.startsWith('Uf')?'o':'d'); multi.style.left=leftOff+'px'; multi.style.top=topOff+'px'; multi.style.width=w+'px'; multi.style.height=height+'px'; multi.dataset.col=idx+1; 
+          multi.textContent=g.startsWith('Uf')?'Oracle':'Diffuser'; box.appendChild(multi); 
+      } });
+      
+      const hIdx = labels.findIndex(x=>x==='H');
+      if(hIdx>=0){
+          const refG = document.querySelector(`.gate[data-col="${hIdx+1}"][data-row="5"]`);
+          if(refG){
+              const leftOff = refG.getBoundingClientRect().left - boxRect.left; const w = refG.getBoundingClientRect().width; 
+              const topOff = refG.getBoundingClientRect().bottom - boxRect.top + 6;
+              const hLabel = document.createElement('div'); hLabel.style.position='absolute'; hLabel.style.left=(leftOff - 60)+'px'; hLabel.style.width=(w + 120)+'px'; hLabel.style.top=topOff+'px'; 
+              hLabel.style.color='#46d6c7'; hLabel.style.textAlign='center'; hLabel.style.fontSize='.65rem'; hLabel.style.fontFamily='ui-monospace,SFMono-Regular,Menlo,monospace'; hLabel.style.fontWeight='600'; hLabel.style.letterSpacing='0.5px'; hLabel.style.whiteSpace='nowrap';
+              hLabel.textContent='HADAMARD LAYER'; box.appendChild(hLabel);
+          }
+      }
+  }, 50);
+}
+function highlightCircuit(){ document.querySelectorAll('.gate, .multi-gate').forEach(g=>g.classList.remove('active')); if(currentStep===0) return; document.querySelectorAll(`.gate[data-col="${currentStep}"], .multi-gate[data-col="${currentStep}"]`).forEach(g=>g.classList.add('active')); }
+function polyline(points,color,width,opacity,dashed=false){ if(!points) return ''; const d=points.map((p,i)=>`${i===0?'M':'L'} ${p[0]} ${p[1]}`).join(' '); return `<path d="${d}" fill="none" stroke="${color}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round" opacity="${opacity}" ${dashed?'stroke-dasharray="0.8 0.6"':''}/>`; }
+function renderOverlay(){ let out=''; const step=steps[currentStep].key; els.overlay.setAttribute('viewBox','0 0 25 25'); els.overlay.setAttribute('preserveAspectRatio','xMidYMid meet'); out += `<circle cx="9.5" cy="24.5" r="0.35" fill="#ffcc66"/><circle cx="9.5" cy="0.5" r="0.35" fill="#4ade80"/><circle cx="11.5" cy="24.5" r="0.35" fill="#7aa2ff"/>`;
+  const candidates=fallbackCandidates.filter(k=>pathMap[k]);
+  if(persistentWrongMeasured && pathMap[persistentWrongMeasured]){ out += polyline(pathMap[persistentWrongMeasured], '#8b0000', 0.42, 0.9, false); }
+  if(step==='init'){ candidates.slice(0,3).forEach(k=> out+=polyline(pathMap[k],'rgba(148,163,184,.9)',0.22,.55,true)); }
+  else if(step==='h'){ candidates.forEach(k=> out+=polyline(pathMap[k],'rgba(148,163,184,.75)',0.18,.45,true)); }
+  else if(step.startsWith('oracle')){ candidates.slice(0,4).forEach(k=> out+=polyline(pathMap[k],'rgba(148,163,184,.55)',0.18,.28,true)); out += polyline(pathMap[selectedExit.goal],'#ff79c6',0.38,.95,false); }
+  else if(step.startsWith('diff')){ candidates.slice(0,3).forEach(k=> out+=polyline(pathMap[k],'rgba(148,163,184,.35)',0.14,.18,true)); const idx=Number(step.replace('diff','')); out += polyline(pathMap[selectedExit.goal],'#ffcc66',0.32+idx*0.03,0.95,false); }
+  else if(step==='measure'){ candidates.slice(0,2).forEach(k=> out+=polyline(pathMap[k],'rgba(148,163,184,.25)',0.14,.14,true)); }
+  if(step==='measure' && lastMeasured){ const measuredPath = pathMap[lastMeasured]||pathMap['000000']; const measuredColor = lastMeasured===selectedExit.goal ? '#7aa2ff' : '#8b0000'; out += polyline(measuredPath, measuredColor, 0.5, 1, false); }
+  els.overlay.innerHTML=out;
+}
+function renderStates(){ const dist=buildDistribution(); els.states.innerHTML=''; const titleMap={ideal:'Ideal State Probabilities',noisy:'Noisy Simulated Probabilities',hardware:'Hardware-like Observable Summary'}; const noteMap={ideal:'Internal simulator values for the ideal Grover model.',noisy:'Internal simulator values with a simple noise penalty and amplitude spread.',hardware:'Approximate summary only. Real hardware does not expose full amplitudes directly during normal execution.'}; els.statesTitle.textContent=titleMap[viewMode]; els.statesNote.textContent=noteMap[viewMode]; let entries=Object.entries(dist).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])); if(viewMode==='hardware') entries=entries.slice(0,12);
+  entries.slice(0,18).forEach(([s,p])=>{ const row=document.createElement('div'); row.className='row'+(s===selectedExit.goal?' target':'')+(s===lastMeasured?' measured':''); const tag=s===selectedExit.goal?'marked':(s===lastMeasured?'sampled':'·'); row.innerHTML=`<div>${s}</div><div class="bar"><div class="fill" style="width:${Math.max(1,p*100)}%"></div></div><div>${(p*100).toFixed(1)}%</div><div>${tag}</div>`; els.states.appendChild(row); }); }
+function renderHist(){ els.hist.innerHTML=''; const total=Object.values(counts).reduce((a,b)=>a+b,0); const hits=counts[selectedExit.goal]||0; const p=total?hits/total:0; const s=sigma(p,total); els.targetHitsLabel.textContent=String(hits); els.successLabel.textContent=`${(p*100).toFixed(1)}%`; els.uncertaintyLabel.textContent=`±${(1.96*s*100).toFixed(1)}% (95% CI)`; els.histNote.textContent=viewMode==='hardware' ? 'Histogram is the primary observable view. Hardware mode emphasizes shots, target hits, and uncertainty.' : 'Histogram shows sampled outcomes across repeated shots. Small samples can deviate from the theoretical distribution.';
+  if(!total){ els.hist.innerHTML='<div style="color:var(--muted)">Histogram appears after the first measurement.</div>'; return; }
+  Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,14).forEach(([s,c])=>{ const row=document.createElement('div'); row.className='row'+(s===selectedExit.goal?' target':'')+(s===lastMeasured?' measured':''); row.innerHTML=`<div>${s}</div><div class="bar"><div class="fill" style="width:${100*c/total}%"></div></div><div>${c}</div><div>${(100*c/total).toFixed(1)}%</div>`; els.hist.appendChild(row); }); }
+function updateNotes(){ els.modelNote.textContent=viewMode==='ideal' ? 'Ideal mode uses the theoretical Grover round count for N=64 and exposes simulator-internal probabilities.' : viewMode==='noisy' ? 'Noisy mode keeps the Grover structure but attenuates target amplification and redistributes some probability to non-target states.' : 'Hardware-like mode prioritizes shot statistics, adds readout imperfections, and should be interpreted as an approximation rather than a direct hardware dashboard.'; }
+function update(){ totalShots=modeShots(); els.roundsLabel.textContent=String(idealRounds); els.shotsTotalLabel.textContent=String(totalShots); els.shotLabel.textContent=`${currentShot} / ${totalShots}`; els.stageLabel.textContent=steps[currentStep].label; els.measureLabel.textContent=lastMeasured || '—'; els.desc.textContent=steps[currentStep].text; highlightCircuit(); renderOverlay(); renderStates(); renderHist(); renderExitPicker(); renderModeSwitch(); updateNotes(); }
+function measure(){ 
+  const dist=buildDistribution(); const hit=sampleMeasurement(dist); 
+  counts[hit]=(counts[hit]||0)+1; lastMeasured=hit; 
+  if(hit !== selectedExit.goal){ persistentWrongMeasured = hit; pausedForError = true; } 
+  log(`Shot ${currentShot}/${totalShots}: sampled ${hit}.${hit !== selectedExit.goal?' INCORRECT PATH!':''}`); 
+}
+function tick(){ 
+  if(pausedForError) return;
+  if(currentStep < steps.length-1){ 
+      currentStep += 1; 
+      if(steps[currentStep].key==='measure'){
+          measure(); 
+          update(); 
+          if(pausedForError){
+              stop();
+              document.getElementById('playBtn').textContent='Continue';
+              document.getElementById('playBtn').classList.add('error');
+              return;
+          }
+      }
+      else log(`Shot ${currentShot}/${totalShots}: ${steps[currentStep].label}.`); 
+      update(); return; 
+  } 
+  if(currentShot < totalShots){ currentShot += 1; currentStep = 0; lastMeasured = null; update(); } 
+  else { stop(); log('Finished all shots.'); } 
+}
+function start(){ 
+  if(pausedForError){
+      pausedForError = false;
+      document.getElementById('playBtn').classList.remove('error');
+      // advance immediately upon continue
+      if(currentShot < totalShots){ currentShot += 1; currentStep = 0; lastMeasured = null; update(); } 
+      else { stop(); log('Finished all shots.'); } 
+      if(currentShot <= totalShots){
+          playing=true; document.getElementById('playBtn').textContent='Pause'; timer=setInterval(tick,180);
+      }
+      return;
+  }
+  if(playing) return; playing=true; document.getElementById('playBtn').textContent='Pause'; timer=setInterval(tick,180); 
+}
+function stop(){ playing=false; clearInterval(timer); timer=null; if(!pausedForError) document.getElementById('playBtn').textContent='Start'; }
+function resetRun(withLog=true){ stop(); currentStep=0; currentShot=1; counts={}; lastMeasured=null; persistentWrongMeasured=null; pausedForError=false; document.getElementById('playBtn').classList.remove('error'); document.getElementById('playBtn').textContent='Start'; update(); if(withLog) log('Simulation reset.'); }
+document.getElementById('playBtn').onclick=()=>playing?stop():start();
+document.getElementById('stepBtn').onclick=()=>{ if(!pausedForError){ stop(); tick(); } };
+document.getElementById('resetBtn').onclick=()=>resetRun(true);
+renderMazeBg(); renderTimeline(); renderCircuit(); update();
+</script>
+</body>
+</html>
