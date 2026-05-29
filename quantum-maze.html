@@ -10,10 +10,10 @@
 .wrap{max-width:1540px;margin:0 auto;padding:22px}.hero{margin-bottom:18px}.hero h1{margin:0 0 10px;font-size:clamp(2rem,3vw,3.5rem)}.hero p{margin:0;color:var(--muted);max-width:98ch;line-height:1.55}
 .grid{display:grid;grid-template-columns:390px 1.15fr .95fr;gap:18px}.panel{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:18px;padding:18px}
 .section{margin-bottom:16px}.section h2{margin:0 0 10px;color:var(--muted);font-size:.84rem;text-transform:uppercase;letter-spacing:.08em}
-.btns{display:flex;flex-wrap:wrap;gap:10px}.btn{border:0;border-radius:12px;padding:11px 14px;cursor:pointer;font:inherit}.primary{background:linear-gradient(135deg,#46d6c7,#2b7e82);color:#071214;font-weight:700}.primary.error{background:linear-gradient(135deg,#ffcc66,#ff79c6);animation:pulse 1s infinite}.secondary{background:var(--panel2);color:var(--text)}.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btns{display:flex;flex-wrap:wrap;gap:10px}.btn{border:0;border-radius:12px;padding:11px 14px;cursor:pointer;font:inherit}.primary{background:linear-gradient(135deg,#46d6c7,#2b7e82);color:#071214;font-weight:700}.primary.error{background:linear-gradient(135deg,#ffcc66,#ff79c6);animation:pulse 1s infinite}.secondary{background:var(--panel2);color:var(--text)}.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}.check-label{display:flex;align-items:center;gap:8px;margin-top:10px;color:var(--muted);font-size:.88rem;cursor:pointer}.check-label input{accent-color:var(--accent);width:16px;height:16px;cursor:pointer}.speed-row{display:flex;align-items:center;gap:10px;margin-top:10px}.speed-label{color:var(--muted);font-size:.84rem}.speed-switch{display:flex;gap:6px}.speed-btn{border:1px solid var(--line);background:rgba(255,255,255,.02);color:var(--text);border-radius:10px;padding:6px 14px;cursor:pointer;font:inherit;font-size:.82rem}.speed-btn.active{border-color:rgba(70,214,199,.8);background:rgba(70,214,199,.12)}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,121,198,0.7)}70%{box-shadow:0 0 0 10px rgba(255,121,198,0)}100%{box-shadow:0 0 0 0 rgba(255,121,198,0)}}
 .mode-switch{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.mode-btn{border:1px solid var(--line);background:rgba(255,255,255,.02);color:var(--text);border-radius:12px;padding:10px 12px;cursor:pointer}.mode-btn.active{border-color:rgba(70,214,199,.8);background:rgba(70,214,199,.12)}
-.stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{padding:12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025)}.stat span{display:block;color:var(--muted);font-size:.84rem}.stat strong{display:block;margin-top:6px}.tiny{font-size:.8rem;color:var(--muted)}
+.stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{padding:12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025);min-height:86px}.stat span{display:block;color:var(--muted);font-size:.84rem;min-height:1.3em}.stat strong{display:block;margin-top:6px;min-height:2.5em}.tiny{font-size:.8rem;color:var(--muted);min-height:1.2em}
 .note{padding:12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025);color:var(--muted);line-height:1.5}
 .maze-wrap{position:relative;background:#0b0f14;border:1px solid var(--line);border-radius:16px;padding:12px;display:grid;place-items:center}.maze-stage{position:relative;display:inline-block}.maze-stage .maze-bg{width:min(100%,620px);display:block;border-radius:10px;background:#151b23}.maze-overlay{position:absolute;inset:0;width:100%;height:100%}
 .exit-picker{display:grid;gap:10px}.exit-option{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025);cursor:pointer}.exit-option.active{border-color:rgba(255,121,198,.65);background:rgba(255,121,198,.08)}
@@ -41,7 +41,7 @@
 </header>
 <main class="grid">
 <section class="panel">
-<div class="section"><h2>Controls</h2><div class="btns"><button class="btn primary" id="playBtn">Start</button><button class="btn secondary" id="stepBtn">Step</button><button class="btn ghost" id="resetBtn">Reset</button></div></div>
+<div class="section"><h2>Controls</h2><div class="btns"><button class="btn primary" id="playBtn">Start</button><button class="btn secondary" id="stepBtn">Step</button><button class="btn ghost" id="resetBtn">Reset</button></div><label class="check-label" id="pauseCheckLabel"><input type="checkbox" id="pauseOnErrorCb" checked> Pause on wrong measurement</label><div class="speed-row"><span class="speed-label">Speed:</span><div class="speed-switch" id="speedSwitch"></div></div></div>
 <div class="section"><h2>View Mode</h2><div class="mode-switch" id="modeSwitch"></div></div>
 <div class="section"><h2>Exit Selection</h2><div class="exit-picker" id="exitPicker"></div></div>
 <div class="section"><h2>Parameters</h2><div class="stats3">
@@ -137,28 +137,30 @@ function generatePathForState(state) {
     return path;
 }
 const pathMap = {};
-basisStates.forEach(s => pathMap[s] = generatePathForState(s));
+function getPath(state){ if(!pathMap[state]) pathMap[state]=generatePathForState(state); return pathMap[state]; }
 const fallbackCandidates = ['000000','001000','010000','011000','011100','011101'];
-let selectedExit = exits[0], viewMode='ideal', currentStep=0, currentShot=1, totalShots=128, playing=false, timer=null, counts={}, lastMeasured=null, persistentWrongMeasured=null, pausedForError=false;
+let selectedExit = exits[0], viewMode='ideal', currentStep=0, currentShot=1, totalShots=128, playing=false, stepping=false, pauseOnError=true, speed='normal', timer=null, counts={}, lastMeasured=null, persistentWrongMeasured=null, pausedForError=false;
+function tickInterval(){ return speed==='fast'?40:180; }
 const els = { exitPicker:document.getElementById('exitPicker'), shotLabel:document.getElementById('shotLabel'), stageLabel:document.getElementById('stageLabel'), measureLabel:document.getElementById('measureLabel'), desc:document.getElementById('desc'), log:document.getElementById('log'), states:document.getElementById('states'), hist:document.getElementById('hist'), overlay:document.getElementById('mazeOverlay'), modeSwitch:document.getElementById('modeSwitch'), roundsLabel:document.getElementById('roundsLabel'), shotsTotalLabel:document.getElementById('shotsTotalLabel'), targetHitsLabel:document.getElementById('targetHitsLabel'), successLabel:document.getElementById('successLabel'), uncertaintyLabel:document.getElementById('uncertaintyLabel'), modelNote:document.getElementById('modelNote'), statesTitle:document.getElementById('statesTitle'), statesNote:document.getElementById('statesNote'), histNote:document.getElementById('histNote'), mazeBg:document.getElementById('mazeBg') };
 function renderMazeBg(){ els.mazeBg.innerHTML=''; mazeRows.forEach((row,y)=>{ [...row].forEach((cell,x)=>{ if(cell==='x'){ const r=document.createElementNS('http://www.w3.org/2000/svg','rect'); r.setAttribute('x',x); r.setAttribute('y',y); r.setAttribute('width',1); r.setAttribute('height',1); r.setAttribute('fill','#444C56'); els.mazeBg.appendChild(r); } }); }); }
 function log(msg){ const d=document.createElement('div'); d.textContent=`[${new Date().toLocaleTimeString('en-US',{hour12:false})}] ${msg}`; els.log.prepend(d); while(els.log.children.length>14) els.log.removeChild(els.log.lastChild); }
 function modeShots(){ return viewMode==='hardware'?1024:viewMode==='noisy'?256:128; }
 function sigma(p,n){ if(!n) return 0; return Math.sqrt(p*(1-p)/n); }
 function groverProb(round){ const N=64; const theta=Math.asin(1/Math.sqrt(N)); return Math.pow(Math.sin((2*round+1)*theta),2); }
-function buildDistribution(){ const goal=selectedExit.goal; const stepKey=steps[currentStep].key; const out={}; basisStates.forEach(s=>out[s]=0); if(stepKey==='init'){ out['000000']=1; return out; } if(stepKey==='h'){ basisStates.forEach(s=>out[s]=1/64); return out; }
+function buildDistribution(stepKey, goal, mode){ const out={}; basisStates.forEach(s=>out[s]=0); if(stepKey==='init'){ out['000000']=1; return out; } if(stepKey==='h'){ basisStates.forEach(s=>out[s]=1/64); return out; }
   let rounds=0; if(stepKey==='measure') rounds=idealRounds; else if(stepKey.startsWith('oracle')) rounds=Math.max(0, Number(stepKey.replace('oracle',''))-1); else if(stepKey.startsWith('diff')) rounds=Number(stepKey.replace('diff',''));
   let pGoal=groverProb(rounds);
-  if(viewMode==='noisy') pGoal=Math.max(0.04,pGoal*0.88);
-  if(viewMode==='hardware') pGoal=Math.max(0.03,pGoal*0.74);
+  if(mode==='noisy') pGoal=Math.max(0.04,pGoal*0.88);
+  if(mode==='hardware') pGoal=Math.max(0.02,pGoal*0.55);
   const rest=(1-pGoal)/63; basisStates.forEach(s=>out[s]=s===goal?pGoal:rest);
-  if(viewMode!=='ideal'){
-    const spread=viewMode==='hardware'?0.0018:0.0008;
+  if(mode!=='ideal'){
+    const spread=mode==='hardware'?0.003:0.0008;
     fallbackCandidates.forEach((s,i)=>{ if(s!==goal){ out[s]+=spread*(i+1); out[goal]-=spread*(i+1); } });
+    out[goal]=Math.max(0,out[goal]);
   }
   return out;
 }
-function sampleMeasurement(dist){ let entries=Object.entries(dist); if(viewMode==='hardware') entries=entries.map(([s,p])=>[s,p*(s===selectedExit.goal?0.97:1)]); let sum=entries.reduce((a,[,p])=>a+p,0); entries=entries.map(([s,p])=>[s,p/sum]); let r=Math.random(),acc=0,hit='000000'; for(const [s,p] of entries){ acc+=p; if(r<=acc){ hit=s; break; } } if(viewMode==='hardware' && Math.random()<0.03){ const others=basisStates.filter(s=>s!==hit); hit=others[(Math.random()*others.length)|0]; } return hit; }
+function sampleMeasurement(dist, mode, goal){ let entries=Object.entries(dist); let sum=entries.reduce((a,[,p])=>a+p,0); if(!sum) return '000000'; entries=entries.map(([s,p])=>[s,p/sum]); let r=Math.random(),acc=0,hit='000000'; for(const [s,p] of entries){ acc+=p; if(r<=acc){ hit=s; break; } } if(mode==='hardware' && Math.random()<0.08){ const others=basisStates.filter(s=>s!==hit); hit=others[(Math.random()*others.length)|0]; } return hit; }
 function renderExitPicker(){ els.exitPicker.innerHTML=''; exits.forEach(ex=>{ const div=document.createElement('div'); div.className='exit-option'+(selectedExit.id===ex.id?' active':''); div.innerHTML=`<div class="dot ${ex.id}"></div><div style="pointer-events:none"><div><strong>${ex.label}</strong></div><div style="color:var(--muted);font-size:.92rem">Marked state: ${ex.goal}. ${ex.note}</div></div>`; div.onclick=()=>{ if(playing) return; selectedExit=ex; resetRun(false); log(`Selected ${ex.label} as marked state.`); }; els.exitPicker.appendChild(div); }); }
 function renderModeSwitch(){ els.modeSwitch.innerHTML=''; viewModes.forEach(m=>{ const b=document.createElement('button'); b.className='mode-btn'+(viewMode===m.id?' active':''); b.textContent=m.label; b.onclick=()=>{ if(playing) return; viewMode=m.id; resetRun(false); log(`Switched to ${m.label} mode.`); }; els.modeSwitch.appendChild(b); }); }
 function renderTimeline(){ 
@@ -214,49 +216,56 @@ function renderCircuit(){ const box=document.getElementById('circuit'); box.inne
 }
 function highlightCircuit(){ document.querySelectorAll('.gate, .multi-gate').forEach(g=>g.classList.remove('active')); if(currentStep===0) return; document.querySelectorAll(`.gate[data-col="${currentStep}"], .multi-gate[data-col="${currentStep}"]`).forEach(g=>g.classList.add('active')); }
 function polyline(points,color,width,opacity,dashed=false){ if(!points) return ''; const d=points.map((p,i)=>`${i===0?'M':'L'} ${p[0]} ${p[1]}`).join(' '); return `<path d="${d}" fill="none" stroke="${color}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round" opacity="${opacity}" ${dashed?'stroke-dasharray="0.8 0.6"':''}/>`; }
-function renderOverlay(){ let out=''; const step=steps[currentStep].key; els.overlay.setAttribute('viewBox','0 0 25 25'); els.overlay.setAttribute('preserveAspectRatio','xMidYMid meet'); out += `<circle cx="9.5" cy="24.5" r="0.35" fill="#ffcc66"/><circle cx="9.5" cy="0.5" r="0.35" fill="#4ade80"/><circle cx="11.5" cy="24.5" r="0.35" fill="#7aa2ff"/>`;
-  const candidates=fallbackCandidates.filter(k=>pathMap[k]);
-  if(persistentWrongMeasured && pathMap[persistentWrongMeasured]){ out += polyline(pathMap[persistentWrongMeasured], '#8b0000', 0.42, 0.9, false); }
-  if(step==='init'){ candidates.slice(0,3).forEach(k=> out+=polyline(pathMap[k],'rgba(148,163,184,.9)',0.22,.55,true)); }
-  else if(step==='h'){ candidates.forEach(k=> out+=polyline(pathMap[k],'rgba(148,163,184,.75)',0.18,.45,true)); }
-  else if(step.startsWith('oracle')){ candidates.slice(0,4).forEach(k=> out+=polyline(pathMap[k],'rgba(148,163,184,.55)',0.18,.28,true)); out += polyline(pathMap[selectedExit.goal],'#ff79c6',0.38,.95,false); }
-  else if(step.startsWith('diff')){ candidates.slice(0,3).forEach(k=> out+=polyline(pathMap[k],'rgba(148,163,184,.35)',0.14,.18,true)); const idx=Number(step.replace('diff','')); out += polyline(pathMap[selectedExit.goal],'#ffcc66',0.32+idx*0.03,0.95,false); }
-  else if(step==='measure'){ candidates.slice(0,2).forEach(k=> out+=polyline(pathMap[k],'rgba(148,163,184,.25)',0.14,.14,true)); }
-  if(step==='measure' && lastMeasured){ const measuredPath = pathMap[lastMeasured]||pathMap['000000']; const measuredColor = lastMeasured===selectedExit.goal ? '#7aa2ff' : '#8b0000'; out += polyline(measuredPath, measuredColor, 0.5, 1, false); }
+function renderOverlay(){ let out=''; const step=steps[currentStep].key; els.overlay.setAttribute('viewBox','0 0 25 25'); els.overlay.setAttribute('preserveAspectRatio','xMidYMid meet'); const exitMarker=selectedExit.id==='top'?'<circle cx="9.5" cy="0.5" r="0.35" fill="#4ade80"/>':'<circle cx="11.5" cy="24.5" r="0.35" fill="#7aa2ff"/>'; out+='<circle cx="9.5" cy="24.5" r="0.35" fill="#ffcc66"/>'+exitMarker;
+  const candidates=fallbackCandidates.filter(k=>getPath(k));
+  if(persistentWrongMeasured && getPath(persistentWrongMeasured)){ out += polyline(getPath(persistentWrongMeasured), '#8b0000', 0.42, 0.9, false); }
+  if(step==='init'){ candidates.slice(0,3).forEach(k=> out+=polyline(getPath(k),'rgba(148,163,184,.9)',0.22,.55,true)); }
+  else if(step==='h'){ candidates.forEach(k=> out+=polyline(getPath(k),'rgba(148,163,184,.75)',0.18,.45,true)); }
+  else if(step.startsWith('oracle')){ candidates.slice(0,4).forEach(k=> out+=polyline(getPath(k),'rgba(148,163,184,.55)',0.18,.28,true)); out += polyline(getPath(selectedExit.goal),'#ff79c6',0.38,.95,false); }
+  else if(step.startsWith('diff')){ candidates.slice(0,3).forEach(k=> out+=polyline(getPath(k),'rgba(148,163,184,.35)',0.14,.18,true)); const idx=Number(step.replace('diff','')); out += polyline(getPath(selectedExit.goal),'#ffcc66',0.32+idx*0.03,0.95,false); }
+  else if(step==='measure'){ candidates.slice(0,2).forEach(k=> out+=polyline(getPath(k),'rgba(148,163,184,.25)',0.14,.14,true)); }
+  if(step==='measure' && lastMeasured){ const measuredPath = getPath(lastMeasured)||getPath('000000'); const measuredColor = lastMeasured===selectedExit.goal ? '#7aa2ff' : '#8b0000'; out += polyline(measuredPath, measuredColor, 0.5, 1, false); }
   els.overlay.innerHTML=out;
 }
-function renderStates(){ const dist=buildDistribution(); els.states.innerHTML=''; const titleMap={ideal:'Ideal State Probabilities',noisy:'Noisy Simulated Probabilities',hardware:'Hardware-like Observable Summary'}; const noteMap={ideal:'Internal simulator values for the ideal Grover model.',noisy:'Internal simulator values with a simple noise penalty and amplitude spread.',hardware:'Approximate summary only. Real hardware does not expose full amplitudes directly during normal execution.'}; els.statesTitle.textContent=titleMap[viewMode]; els.statesNote.textContent=noteMap[viewMode]; let entries=Object.entries(dist).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])); if(viewMode==='hardware') entries=entries.slice(0,12);
-  entries.slice(0,18).forEach(([s,p])=>{ const row=document.createElement('div'); row.className='row'+(s===selectedExit.goal?' target':'')+(s===lastMeasured?' measured':''); const tag=s===selectedExit.goal?'marked':(s===lastMeasured?'sampled':'·'); row.innerHTML=`<div>${s}</div><div class="bar"><div class="fill" style="width:${Math.max(1,p*100)}%"></div></div><div>${(p*100).toFixed(1)}%</div><div>${tag}</div>`; els.states.appendChild(row); }); }
+function createStateRow(state, barWidth, label, tag){
+  const row=document.createElement('div');
+  row.className='row'+(state===selectedExit.goal?' target':'')+(state===lastMeasured?' measured':'');
+  row.innerHTML=`<div>${state}</div><div class="bar"><div class="fill" style="width:${Math.max(1,barWidth)}%"></div></div><div>${label}</div><div>${tag}</div>`;
+  return row;
+}
+function renderStates(){ const dist=buildDistribution(steps[currentStep].key, selectedExit.goal, viewMode); els.states.innerHTML=''; const titleMap={ideal:'Ideal State Probabilities',noisy:'Noisy Simulated Probabilities',hardware:'Hardware-like Observable Summary'}; const noteMap={ideal:'Internal simulator values for the ideal Grover model.',noisy:'Internal simulator values with a simple noise penalty and amplitude spread.',hardware:'Approximate summary only. Real hardware does not expose full amplitudes directly during normal execution.'}; els.statesTitle.textContent=titleMap[viewMode]; els.statesNote.textContent=noteMap[viewMode]; let entries=Object.entries(dist).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])); if(viewMode==='hardware') entries=entries.slice(0,12);
+  entries.slice(0,18).forEach(([s,p])=>{ const tag=s===selectedExit.goal?'marked':(s===lastMeasured?'sampled':'·'); els.states.appendChild(createStateRow(s, p*100, (p*100).toFixed(1)+'%', tag)); }); }
 function renderHist(){ els.hist.innerHTML=''; const total=Object.values(counts).reduce((a,b)=>a+b,0); const hits=counts[selectedExit.goal]||0; const p=total?hits/total:0; const s=sigma(p,total); els.targetHitsLabel.textContent=String(hits); els.successLabel.textContent=`${(p*100).toFixed(1)}%`; els.uncertaintyLabel.textContent=`±${(1.96*s*100).toFixed(1)}% (95% CI)`; els.histNote.textContent=viewMode==='hardware' ? 'Histogram is the primary observable view. Hardware mode emphasizes shots, target hits, and uncertainty.' : 'Histogram shows sampled outcomes across repeated shots. Small samples can deviate from the theoretical distribution.';
   if(!total){ els.hist.innerHTML='<div style="color:var(--muted)">Histogram appears after the first measurement.</div>'; return; }
-  Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,14).forEach(([s,c])=>{ const row=document.createElement('div'); row.className='row'+(s===selectedExit.goal?' target':'')+(s===lastMeasured?' measured':''); row.innerHTML=`<div>${s}</div><div class="bar"><div class="fill" style="width:${100*c/total}%"></div></div><div>${c}</div><div>${(100*c/total).toFixed(1)}%</div>`; els.hist.appendChild(row); }); }
+  Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,14).forEach(([s,c])=>{ els.hist.appendChild(createStateRow(s, 100*c/total, c, (100*c/total).toFixed(1)+'%')); }); }
 function updateNotes(){ els.modelNote.textContent=viewMode==='ideal' ? 'Ideal mode uses the theoretical Grover round count for N=64 and exposes simulator-internal probabilities.' : viewMode==='noisy' ? 'Noisy mode keeps the Grover structure but attenuates target amplification and redistributes some probability to non-target states.' : 'Hardware-like mode prioritizes shot statistics, adds readout imperfections, and should be interpreted as an approximation rather than a direct hardware dashboard.'; }
-function update(){ totalShots=modeShots(); els.roundsLabel.textContent=String(idealRounds); els.shotsTotalLabel.textContent=String(totalShots); els.shotLabel.textContent=`${currentShot} / ${totalShots}`; els.stageLabel.textContent=steps[currentStep].label; els.measureLabel.textContent=lastMeasured || '—'; els.desc.textContent=steps[currentStep].text; highlightCircuit(); renderOverlay(); renderStates(); renderHist(); renderExitPicker(); renderModeSwitch(); updateNotes(); }
-function measure(){ 
-  const dist=buildDistribution(); const hit=sampleMeasurement(dist); 
-  counts[hit]=(counts[hit]||0)+1; lastMeasured=hit; 
-  if(hit !== selectedExit.goal){ persistentWrongMeasured = hit; pausedForError = true; } 
-  log(`Shot ${currentShot}/${totalShots}: sampled ${hit}.${hit !== selectedExit.goal?' INCORRECT PATH!':''}`); 
+function update(){ totalShots=modeShots(); els.roundsLabel.textContent=String(idealRounds); els.shotsTotalLabel.textContent=String(totalShots); els.shotLabel.textContent=`${currentShot} / ${totalShots}`; els.stageLabel.textContent=steps[currentStep].label; els.measureLabel.textContent=lastMeasured || '—'; els.desc.textContent=steps[currentStep].text; highlightCircuit(); renderOverlay(); renderStates(); renderHist(); updateNotes(); }
+function measure(){
+  const dist=buildDistribution(steps[currentStep].key, selectedExit.goal, viewMode); const hit=sampleMeasurement(dist, viewMode, selectedExit.goal);
+  counts[hit]=(counts[hit]||0)+1; lastMeasured=hit;
+  if(hit !== selectedExit.goal){ persistentWrongMeasured = hit; if(pauseOnError) pausedForError = true; }
+  log(`Shot ${currentShot}/${totalShots}: sampled ${hit}.${hit !== selectedExit.goal?' INCORRECT PATH!':''}`);
 }
-function tick(){ 
+function tick(){
+  if(!playing && !stepping) return;
   if(pausedForError) return;
-  if(currentStep < steps.length-1){ 
-      currentStep += 1; 
+  if(currentStep < steps.length-1){
+      currentStep += 1;
       if(steps[currentStep].key==='measure'){
-          measure(); 
-          update(); 
+          measure();
           if(pausedForError){
+              update();
               stop();
               document.getElementById('playBtn').textContent='Continue';
               document.getElementById('playBtn').classList.add('error');
               return;
           }
       }
-      else log(`Shot ${currentShot}/${totalShots}: ${steps[currentStep].label}.`); 
-      update(); return; 
-  } 
-  if(currentShot < totalShots){ currentShot += 1; currentStep = 0; lastMeasured = null; update(); } 
-  else { stop(); log('Finished all shots.'); } 
+      else log(`Shot ${currentShot}/${totalShots}: ${steps[currentStep].label}.`);
+      update(); return;
+  }
+  if(currentShot < totalShots){ currentShot += 1; currentStep = 0; lastMeasured = null; update(); }
+  else { stop(); log('Finished all shots.'); }
 }
 function start(){ 
   if(pausedForError){
@@ -265,19 +274,26 @@ function start(){
       // advance immediately upon continue
       if(currentShot < totalShots){ currentShot += 1; currentStep = 0; lastMeasured = null; update(); } 
       else { stop(); log('Finished all shots.'); } 
-      if(currentShot <= totalShots){
-          playing=true; document.getElementById('playBtn').textContent='Pause'; timer=setInterval(tick,180);
+      if(currentShot < totalShots){
+          playing=true; document.getElementById('playBtn').textContent='Pause'; timer=setInterval(tick,tickInterval());
       }
       return;
   }
-  if(playing) return; playing=true; document.getElementById('playBtn').textContent='Pause'; timer=setInterval(tick,180); 
+  if(currentShot >= totalShots) return;
+  if(playing) return; playing=true; document.getElementById('playBtn').textContent='Pause'; timer=setInterval(tick,tickInterval());
 }
 function stop(){ playing=false; clearInterval(timer); timer=null; if(!pausedForError) document.getElementById('playBtn').textContent='Start'; }
-function resetRun(withLog=true){ stop(); currentStep=0; currentShot=1; counts={}; lastMeasured=null; persistentWrongMeasured=null; pausedForError=false; document.getElementById('playBtn').classList.remove('error'); document.getElementById('playBtn').textContent='Start'; update(); if(withLog) log('Simulation reset.'); }
+function resetRun(withLog=true){ stop(); currentStep=0; currentShot=1; counts={}; lastMeasured=null; persistentWrongMeasured=null; pausedForError=false; document.getElementById('playBtn').classList.remove('error'); document.getElementById('playBtn').textContent='Start'; renderExitPicker(); renderModeSwitch(); update(); if(withLog) log('Simulation reset.'); }
 document.getElementById('playBtn').onclick=()=>playing?stop():start();
-document.getElementById('stepBtn').onclick=()=>{ if(!pausedForError){ stop(); tick(); } };
+document.getElementById('stepBtn').onclick=()=>{ if(pausedForError){ log('Paused on wrong measurement — click Continue or Reset.'); return; } stop(); stepping=true; tick(); stepping=false; };
 document.getElementById('resetBtn').onclick=()=>resetRun(true);
-renderMazeBg(); renderTimeline(); renderCircuit(); update();
+document.getElementById('pauseOnErrorCb').onchange=function(){ pauseOnError=this.checked; log(this.checked?'Pause on wrong measurement enabled.':'Pause on wrong measurement disabled — simulation will continue through errors.'); };
+(function renderSpeedSwitch(){
+  const speeds = [{id:'normal',label:'Normal'},{id:'fast',label:'Fast'}];
+  const container = document.getElementById('speedSwitch'); container.innerHTML='';
+  speeds.forEach(s=>{ const b=document.createElement('button'); b.className='speed-btn'+(speed===s.id?' active':''); b.textContent=s.label; b.onclick=()=>{ speed=s.id; renderSpeedSwitch(); if(playing && !pausedForError){ clearInterval(timer); timer=setInterval(tick,tickInterval()); } log(`Speed set to ${s.label}.`); }; container.appendChild(b); });
+})();
+renderMazeBg(); renderTimeline(); renderCircuit(); renderExitPicker(); renderModeSwitch(); update();
 </script>
 </body>
 </html>
