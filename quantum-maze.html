@@ -155,7 +155,7 @@ function buildDistribution(stepKey, goal, mode){ const out={}; basisStates.forEa
   const isOracle1=isOracle && rounds===0;
 	  if(!isOracle1){
     if(mode==='noisy') pGoal=Math.max(0.04,pGoal*0.88);
-    if(mode==='hardware') pGoal=Math.max(0.02,pGoal*0.55);
+    if(mode==='hardware') pGoal=Math.max(0.02,pGoal*0.60);
   }
   const rest=(1-pGoal)/63; basisStates.forEach(s=>out[s]=s===goal?pGoal:rest);
   if(mode!=='ideal' && !isOracle1){
