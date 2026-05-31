@@ -31,6 +31,7 @@
 .multi-gate.active, .gate.active{outline:2px solid rgba(255,255,255,.88);transform:scale(1.02);z-index:3;}
 .legend{display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:.9rem}.legend span{display:inline-flex;align-items:center;gap:7px}.legend i{width:12px;height:12px;border-radius:50%;display:inline-block}
 @media (max-width:1240px){.grid,.stats3,.mode-switch{grid-template-columns:1fr}}
+	.size-warning{display:none;background:linear-gradient(135deg,rgba(255,204,102,.15),rgba(255,121,198,.08));border:1px solid rgba(255,204,102,.35);border-radius:14px;padding:14px 18px;margin-bottom:18px;color:var(--gold);font-size:.94rem;line-height:1.5;position:relative;animation:fadeIn .4s ease}.size-warning.visible{display:block}.size-warning .close-warn{position:absolute;top:8px;right:12px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem;line-height:1;padding:4px}.size-warning .close-warn:hover{color:var(--text)}@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -39,6 +40,7 @@
 <h1>Quantum Maze Simulator — Realism-oriented Grover view</h1>
 <p>This version separates ideal theory, noisy simulation, and hardware-like presentation. It uses a 25x25 maze rendering, a 6-qubit Grover-inspired model, a fuller circuit timeline, and histogram statistics with uncertainty.</p>
 </header>
+<div class="size-warning" id="sizeWarning"><button class="close-warn" id="closeWarnBtn" title="Dismiss">&times;</button><strong>⚠️ Recommended window size</strong><br>This simulator works best at a window width of <strong>1550&nbsp;px</strong> and above. At narrower widths the layout may be harder to read.</div>
 <main class="grid">
 <section class="panel">
 <div class="section"><h2>Controls</h2><div class="btns"><button class="btn primary" id="playBtn">Start</button><button class="btn secondary" id="stepBtn">Step</button><button class="btn ghost" id="resetBtn">Reset</button></div><label class="check-label" id="pauseCheckLabel"><input type="checkbox" id="pauseOnErrorCb" checked> Pause on wrong measurement</label><div class="speed-row"><span class="speed-label">Speed:</span><div class="speed-switch" id="speedSwitch"></div></div></div>
@@ -294,6 +296,14 @@ document.getElementById('pauseOnErrorCb').onchange=function(){ pauseOnError=this
   speeds.forEach(s=>{ const b=document.createElement('button'); b.className='speed-btn'+(speed===s.id?' active':''); b.textContent=s.label; b.onclick=()=>{ speed=s.id; renderSpeedSwitch(); if(playing && !pausedForError){ clearInterval(timer); timer=setInterval(tick,tickInterval()); } log(`Speed set to ${s.label}.`); }; container.appendChild(b); });
 })();
 renderMazeBg(); renderTimeline(); renderCircuit(); renderExitPicker(); renderModeSwitch(); update();
+(function checkWindowSize(){
+	const warning = document.getElementById('sizeWarning');
+	const closeBtn = document.getElementById('closeWarnBtn');
+	function showIfNarrow(){ if(window.innerWidth < 1550) warning.classList.add('visible'); else warning.classList.remove('visible'); }
+	showIfNarrow();
+	window.addEventListener('resize', showIfNarrow);
+	closeBtn.onclick = function(){ warning.classList.remove('visible'); };
+})();
 </script>
 </body>
 </html>
