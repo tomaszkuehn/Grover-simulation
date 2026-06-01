@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Quantum Maze Simulator — Grover 6q</title>
+<title>Quantum Maze: A Realistic Grover Search Simulator</title>
 <style>
 :root{--bg:#0d1117;--panel:#161b22;--panel2:#1f2632;--line:rgba(255,255,255,.12);--text:#edf2f7;--muted:#9aa7b7;--accent:#46d6c7;--oracle:#ff79c6;--blue:#7aa2ff;--gold:#ffcc66;--dim:#94a3b8}
 *{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at top,#132136,var(--bg) 42%);color:var(--text);font-family:Inter,Arial,sans-serif}
-.wrap{max-width:1540px;margin:0 auto;padding:22px}.hero{margin-bottom:18px}.hero h1{margin:0 0 10px;font-size:clamp(2rem,3vw,3.5rem)}.hero p{margin:0;color:var(--muted);max-width:98ch;line-height:1.55}
+.wrap{max-width:1540px;margin:0 auto;padding:22px}.hero{margin-bottom:18px}.hero h1{margin:0 0 10px;font-size:clamp(2rem,3vw,3.5rem);white-space:nowrap}.hero p{margin:0;color:var(--muted);max-width:98ch;line-height:1.55}
 .grid{display:grid;grid-template-columns:390px 1.15fr .95fr;gap:18px}.panel{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:18px;padding:18px}
 .section{margin-bottom:16px}.section h2{margin:0 0 10px;color:var(--muted);font-size:.84rem;text-transform:uppercase;letter-spacing:.08em}
 .btns{display:flex;flex-wrap:wrap;gap:10px}.btn{border:0;border-radius:12px;padding:11px 14px;cursor:pointer;font:inherit}.primary{background:linear-gradient(135deg,#46d6c7,#2b7e82);color:#071214;font-weight:700}.primary.error{background:linear-gradient(135deg,#ffcc66,#ff79c6);animation:pulse 1s infinite}.secondary{background:var(--panel2);color:var(--text)}.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}.check-label{display:flex;align-items:center;gap:8px;margin-top:10px;color:var(--muted);font-size:.88rem;cursor:pointer}.check-label input{accent-color:var(--accent);width:16px;height:16px;cursor:pointer}.speed-row{display:flex;align-items:center;gap:10px;margin-top:10px}.speed-label{color:var(--muted);font-size:.84rem}.speed-switch{display:flex;gap:6px}.speed-btn{border:1px solid var(--line);background:rgba(255,255,255,.02);color:var(--text);border-radius:10px;padding:6px 14px;cursor:pointer;font:inherit;font-size:.82rem}.speed-btn.active{border-color:rgba(70,214,199,.8);background:rgba(70,214,199,.12)}#playBtn{min-width:100px;text-align:center}
@@ -37,7 +37,7 @@
 <body>
 <div class="wrap">
 <header class="hero">
-<h1>Quantum Maze Simulator — Realism-oriented Grover view</h1>
+<h1>Quantum Maze: A Realistic Grover Search Simulator</h1>
 <p>This version separates ideal theory, noisy simulation, and hardware-like presentation. It uses a 25x25 maze rendering, a 6-qubit Grover-inspired model, a fuller circuit timeline, and histogram statistics with uncertainty.</p>
 </header>
 <div class="size-warning" id="sizeWarning"><button class="close-warn" id="closeWarnBtn" title="Dismiss">&times;</button><strong>⚠️ Recommended window size</strong><br>This simulator works best at a window width of <strong>1550&nbsp;px</strong> and above. At narrower widths the layout may be harder to read.</div>
