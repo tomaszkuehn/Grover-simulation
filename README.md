@@ -2,6 +2,9 @@
 
 An educational browser-based simulator that visualizes a Grover-style quantum search on top of a 25×25 maze, with three distinct fidelity modes — from ideal theory to hardware-inspired shot-based statistics.
 
+<img width="1357" height="933" alt="image" src="https://github.com/user-attachments/assets/69f5fcdf-9d1f-4e2b-8e87-7ec84bf2babd" />
+
+
 ## Overview
 
 This project demonstrates how a maze can be mapped to a simplified quantum search model. It uses:
